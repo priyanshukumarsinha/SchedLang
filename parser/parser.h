@@ -10,7 +10,7 @@ private:
     Lexer *lexer;
     Token cur;
     void parseTaskDecl(ProgramNode &prog);
-    void runSemanticChecks(ProgramNode prog);
+    void runSemanticChecks(ProgramNode &prog);
     void expect(TokenType t, const std:: string &msg);
     void advance();
     void parseTaskBody(TaskNode &task);

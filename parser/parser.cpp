@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <set>
+#include <string>
 
 Parser::Parser(Lexer &lexer){
     this->lexer = &lexer;
@@ -132,6 +133,45 @@ void Parser::parseProperty(TaskNode &task){
     
 }
 
+void Parser::runSemanticChecks(ProgramNode &prog){
+    // now lets check as per our rules
+    // Every task should have both these properties
+    // i.e priority and deadline
+    // both of them should have a value >=0
+    // no duplicate task name
+
+    std::set<std::string> names;
+    // set of name of all tasks seen till now
+    for(auto &t:prog.tasks){
+        if(names.count(t.name)){
+            // if name already seen
+            // that means its duplicate name
+            // throw error 
+            throw std::runtime_error("Duplicate task name: '" + t.name + "' at line " + std::to_string(t.line));
+        }
+        // if not seen till now, put it in names now
+        names.insert(t.name);
+        // check if it has priority
+        bool hasPr = false, hasDl = false;
+        for(auto &p:t.props){
+            if(p.key == "priority") hasPr = true;
+            else if(p.key == "deadline") hasDl = true;
+
+            // for values
+            if (p.key == "priority" && (p.value < 0)) {
+                throw std::runtime_error("Invalid priority value for task '" + t.name + "' at line " + std::to_string(p.line) + ": must be >= 0");
+            }
+            else if (p.key == "deadline" && (p.value <= 0)) {
+                throw std::runtime_error("Invalid deadline value for task '" + t.name + "' at line " + std::to_string(p.line) + ": must be > 0");
+            }
+        }
+        
+        if (!hasPr) throw std::runtime_error("Task '" + t.name + "' missing 'priority' property at line " + std::to_string(t.line));
+        if (!hasDl) throw std::runtime_error("Task '" + t.name + "' missing 'deadline' property at line " + std::to_string(t.line));
+
+    }
+}
+
 ProgramNode Parser::parseProgram(){
     ProgramNode prog;
     // task <identifier> {
@@ -153,7 +193,13 @@ ProgramNode Parser::parseProgram(){
         throw std::runtime_error("Unexpected token at end of program: '" + cur.lexeme + "'");
     }
 
-    // 
-    // runSemanticChecks(prog);
+    // now lets check as per our rules
+    // Every task should have both these properties
+    // i.e priority and deadline
+    // both of them should have a value >=0
+    // no duplicate task name
+
+    // for that we define runSemanticChecks();
+    runSemanticChecks(prog);
     return prog;
 }

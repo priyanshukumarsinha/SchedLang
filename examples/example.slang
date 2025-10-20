@@ -1,6 +1,6 @@
 task controlLoop {
-    priority = 5;
     deadline = 100;
+    priority = 5;
 }
 
 task sensorTask {
