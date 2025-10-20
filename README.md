@@ -1,8 +1,8 @@
 # Lexer and Recursive Descent Parser for SchedLang
 
-Real-time embedded systems often require deterministic task scheduling to ensure timely and predictable task execution. To facilitate this, we introduce **SchedLang**, a simple domain-specific language (DSL) designed to define task schedules, priorities, and deadlines in an expressive and structured way.
+Real-time embedded systems require deterministic task scheduling to ensure timely and predictable task execution. To facilitate this, we introduce **SchedLang**, a domain-specific language (DSL) designed to define task schedules, priorities, and deadlines in a structured way.
 
-This project implements both a **lexical analyzer (lexer)** and a **recursive descent parser** for SchedLang. The lexer converts raw input text into a sequence of tokens, while the parser verifies the syntactic structure of the input and constructs a parse tree. Together, they form the foundation of a small compiler front end for real-time scheduling configurations.
+This project implements both a **lexical analyzer (lexer)** and a **recursive descent parser** for SchedLang. The lexer converts raw input into tokens, while the parser verifies syntax and constructs an Abstract Syntax Tree (AST). Semantic checks ensure tasks are valid and non-conflicting.
 
 ---
 
@@ -10,21 +10,20 @@ This project implements both a **lexical analyzer (lexer)** and a **recursive de
 
 ### **Purpose**
 
-SchedLang is designed to describe the configuration of periodic or aperiodic tasks in real-time embedded systems. Each task specifies:
+SchedLang describes configurations of periodic or aperiodic tasks in real-time systems. Each task specifies:
 
 * **Task name** (identifier)
 * **Priority level**
 * **Deadline**
-* (Optionally) other parameters like execution time or period in extended versions
+* Optionally, other parameters like execution time or period in extended versions
 
---- 
+---
 
 ### **Program Structure**
 
-A SchedLang program consists of one or more **task declarations**.
-Each task declaration defines the task name and its parameters within braces `{}`.
+A SchedLang program consists of one or more **task declarations**, each defining the task name and its properties within braces `{}`.
 
-**General Syntax:**
+**Syntax:**
 
 ```
 task <identifier> {
@@ -39,32 +38,36 @@ task <identifier> {
 
 ### **Tokens**
 
-The lexical analyzer breaks the source code into the following token categories:
+The lexer breaks source code into these categories:
 
 | Token Type    | Example       | Description              |
 | ------------- | ------------- | ------------------------ |
-| `KW_TASK`     | `task`        | Declares a new task      |
-| `KW_PRIORITY` | `priority`    | Declares task priority   |
-| `KW_DEADLINE` | `deadline`    | Declares task deadline   |
+| `KW_TASK`     | `task`        | Task declaration keyword |
+| `KW_PRIORITY` | `priority`    | Task priority keyword    |
+| `KW_DEADLINE` | `deadline`    | Task deadline keyword    |
 | `IDENT`       | `controlLoop` | Task name (user-defined) |
-| `INT`         | `100`, `5`    | Integer literal value    |
+| `INT`         | `5`, `100`    | Integer literals         |
 | `EQ`          | `=`           | Assignment operator      |
 | `SEMI`        | `;`           | Statement terminator     |
 | `LBRACE`      | `{`           | Start of task block      |
 | `RBRACE`      | `}`           | End of task block        |
-| `EOF_TOKEN`   | —             | End of input marker      |
+| `EOF_TOKEN`   | —             | End-of-file marker       |
+
 ---
+
 ### **Lexical Rules**
 
 1. **Keywords** (`task`, `priority`, `deadline`) are matched exactly.
-2. **Identifiers** begin with a letter and may contain letters or digits.
+2. **Identifiers** start with a letter and may contain letters or digits.
 3. **Integers** are sequences of digits (`[0-9]+`).
-4. **Whitespace** (spaces, tabs, newlines) is ignored.
+4. **Whitespace** is ignored.
 5. **Symbols** (`=`, `;`, `{`, `}`) are treated as individual tokens.
+
 ---
+
 ### **Example Token Stream**
 
-For:
+Input:
 
 ```schedlang
 task controlLoop {
@@ -95,9 +98,7 @@ EOF_TOKEN
 
 ## **Grammar Specification (Parser)**
 
-SchedLang’s grammar defines the valid syntactic structure for programs.
----
-### **Grammar Rules**
+SchedLang’s grammar defines valid program structure:
 
 ```
 Program        ::= { TaskDecl }
@@ -106,40 +107,41 @@ TaskBody       ::= { (PriorityDecl | DeadlineDecl) }
 PriorityDecl   ::= "priority" "=" INT ";"
 DeadlineDecl   ::= "deadline" "=" INT ";"
 ```
----
 
-### **Characteristics**
+**Characteristics:**
 
-* Grammar is **LL(1)** (non-left-recursive and suitable for recursive descent parsing).
-* Parsing is **deterministic** and operates in linear time relative to input size.
-* Syntax errors are detected early and reported clearly.
+* Grammar is **LL(1)**, suitable for recursive descent parsing.
+* Parsing is **deterministic** and operates in linear time.
+* Syntax errors are detected and reported clearly.
 
 ---
 
 ## **Parser Implementation**
 
-### **Approach**
+Each grammar non-terminal maps to a dedicated C++ function:
 
-A **recursive descent parser** is implemented, where each non-terminal is represented by a dedicated C++ function:
+* `parseProgram()` → parses the full program
+* `parseTaskDecl()` → parses a single task
+* `parseTaskBody()` → parses task properties
+* `parseProperty()` → handles priority/deadline parsing
+* `runSemanticChecks()` → validates task names, required properties, and value ranges
 
-* `parseProgram()` → parses the full program.
-* `parseTaskDecl()` → parses a single task.
-* `parseTaskBody()` → parses its internal declarations.
-* `parsePriority()` → handle specific parameter rules.
+**Error Handling:**
 
-Each function calls others recursively as per grammar hierarchy.
-
-* `runSemanticChecks()` → at the end to check with semantic rules.
-
-### **Error Handling**
----
-
-If a token does not match the expected one, the parser throws a **syntax error** with the offending token and a descriptive message, e.g.:
+* If an unexpected token occurs, the parser throws a descriptive syntax error:
 
 ```
 Syntax Error: Expected ';' but found 'deadline'
 ```
 
+* Semantic errors are also reported with line numbers:
+
+```
+Semantic Error: Duplicate task name 'controlLoop' at line 1
+Semantic Error: Invalid priority value for task 'sensorTask' at line 2: must be >= 0
+```
+
+---
 
 ## **Directory Structure**
 
@@ -160,10 +162,39 @@ priyanshukumarsinha-schedlang/
 └── README.md
 ```
 
+---
+
+## **How to Build & Run**
+
+### **Using Make**
+
+```bash
+make
+```
+
+Generates executable:
+
+```
+schedlang
+```
+
+### **Manual Compilation**
+
+```bash
+g++ -std=c++17 -Iinclude src/*.cpp -o schedlang
+```
+
+### **Run Example**
+
+```bash
+./schedlang examples/example.slang
+```
+
+---
 
 ## **Example Execution**
 
-### **Input**
+### Input (`example.slang`)
 
 ```schedlang
 task controlLoop {
@@ -177,7 +208,7 @@ task sensorTask {
 }
 ```
 
-### **Output**
+### Output
 
 ```
 Parsed task: controlLoop
@@ -189,32 +220,25 @@ Parsed task: sensorTask
 Parsing completed successfully!
 ```
 
-If an error occurs:
+**Error Example**
 
 ```
-Syntax Error: Expected ';' but found 'deadline'
+Syntax Error: Unexpected token 'prio' at line 2:5. Expected 'priority', 'deadline', or '}'.
 ```
 
+---
 
-## **Design Choices and Features**
+## **Design Features**
 
-* **Readable structure:** Grammar maps directly to parser functions.
-* **Extendable:** New keywords (like `period`, `wcet`) can be added easily.
-* **Low latency:** One-pass, deterministic parsing suitable for embedded systems.
-* **Modularity:** Separate lexer and parser modules for clarity and reuse.
+* **Readable structure:** Grammar maps directly to parser functions
+* **Extendable:** Easily add new keywords (`period`, `wcet`)
+* **Low latency:** One-pass deterministic parsing for embedded systems
+* **Modular:** Lexer, parser, and semantic checker are separate components
 
-
-## **Future Enhancements**
-
-* Add new attributes (`wcet`, `period`, `start_time`).
-* Generate an **Abstract Syntax Tree (AST)** for code generation or scheduling simulation.
-* Implement **semantic analysis** for constraint validation (e.g., deadline ≥ WCET).
-* Build a simple interpreter or compiler backend to simulate scheduling.
-
+---
 
 ## **Conclusion**
 
-The **SchedLang lexer and recursive descent parser** provide a solid foundation for defining and validating real-time scheduling tasks. The system ensures deterministic parsing, clear syntax error detection, and a modular structure suitable for further expansion into a full compiler or scheduling simulator for embedded applications.
+The **SchedLang lexer and recursive descent parser** provide a solid foundation for defining and validating real-time scheduling tasks. The system ensures deterministic parsing, early error detection, and a modular structure suitable for expansion into a full scheduling compiler or simulator.
 
----
 
