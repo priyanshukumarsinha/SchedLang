@@ -52,7 +52,7 @@ The lexical analyzer breaks the source code into the following token categories:
 | `SEMI`        | `;`           | Statement terminator     |
 | `LBRACE`      | `{`           | Start of task block      |
 | `RBRACE`      | `}`           | End of task block        |
-| `END_OF_FILE` | —             | End of input marker      |
+| `EOF_TOKEN`   | —             | End of input marker      |
 ---
 ### **Lexical Rules**
 
@@ -88,7 +88,7 @@ EQ (=)
 INT (100)
 SEMI (;)
 RBRACE (})
-END_OF_FILE
+EOF_TOKEN
 ```
 
 ---
@@ -125,9 +125,11 @@ A **recursive descent parser** is implemented, where each non-terminal is repres
 * `parseProgram()` → parses the full program.
 * `parseTaskDecl()` → parses a single task.
 * `parseTaskBody()` → parses its internal declarations.
-* `parsePriorityDecl()` / `parseDeadlineDecl()` → handle specific parameter rules.
+* `parsePriority()` → handle specific parameter rules.
 
 Each function calls others recursively as per grammar hierarchy.
+
+* `runSemanticChecks()` → at the end to check with semantic rules.
 
 ### **Error Handling**
 ---
@@ -146,13 +148,14 @@ priyanshukumarsinha-schedlang/
 ├── include/
 │   ├── lexer.h
 │   ├── parser.h
+│   ├── ast.h
 │   └── token.h
 ├── src/
 │   ├── lexer.cpp
 │   ├── parser.cpp
 │   └── main.cpp
 ├── examples/
-│   └── example.sched
+│   └── example.slang
 ├── Makefile
 └── README.md
 ```
