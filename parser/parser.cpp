@@ -6,6 +6,7 @@
 
 Parser::Parser(Lexer &lexer){
     this->lexer = &lexer;
+    cur = lexer.peek(0);
 }
 
 void Parser::advance(){
@@ -32,20 +33,34 @@ void Parser::parseTaskDecl(ProgramNode &prog){
     // next there should be a task name i.e identifier
     expect(TokenType::IDENT, "expected 'taskname <identifier>'");
     // if identifier found lets create a TaskNode then
-
+    
     TaskNode t;
     t.name = cur.lexeme;
     t.line = cur.line;
     t.col = cur.col;
-
+    
+    advance();
     // now we need to give t.props
     // for that we need to scan further
     // next we expect a LBRACE {
     expect(TokenType::LBRACE, "expected '{'");
+    advance();
     // if { present then we advance forward
     // and check TaskBody
 
     parseTaskBody(t);
+
+    // if the nextToken gives KW_DEADLINE || KW_PRIORITY
+    // these are consumed inside parseTaskBody()
+    // but if } RBRACE it needs to be consumed here
+
+    expect(TokenType::RBRACE, "expected '}'");
+    advance();
+
+    // add this task to ProgramNode
+    prog.tasks.push_back(std::move(t));
+    // move transfers all contents of t to tasks
+    // doesn't copy but directly gives ownership 
 
 }
 
@@ -99,6 +114,9 @@ void Parser::parseProperty(TaskNode &task){
     expect(TokenType::SEMI, "expected ';' after property");
     advance();
 
+    // now current is either at nextProperty or }
+    // which will be handled by praseTaskDecl or parseTaskBody
+
     // our current property must not be already present 
     // in the task we parsing right now
     for(auto &existing : task.props){
@@ -122,8 +140,10 @@ ProgramNode Parser::parseProgram(){
     // }
 
     // 1. find task keyword KW_TASK
+
     while(cur.type == TokenType::KW_TASK){
         // 2. Simplify TaskDecl
+        // std::cout << "got task keyword" << std::endl;
         parseTaskDecl(prog);
     }
 
@@ -132,6 +152,8 @@ ProgramNode Parser::parseProgram(){
     if(cur.type != TokenType::EOF_TOKEN){
         throw std::runtime_error("Unexpected token at end of program: '" + cur.lexeme + "'");
     }
-    runSemanticChecks(prog);
+
+    // 
+    // runSemanticChecks(prog);
     return prog;
 }

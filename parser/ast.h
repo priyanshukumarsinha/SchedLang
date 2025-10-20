@@ -28,7 +28,7 @@ struct TaskNode{
 };
 
 // top level AST, a list of tasks
-class ProgramNode{
+struct ProgramNode{
     std::vector<TaskNode> tasks;
 };
 

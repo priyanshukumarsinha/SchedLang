@@ -3,15 +3,23 @@
 #include "parser/parser.h"
 #include "parser/ast.h"
 
-int main(){
-    std::string source = R"(
-        task controlLoop {
-            priority = 5;
-            deadline = 100;
-        }
-    )";
+int main(int argc, char*argv[]){
+    if(argc!=2){
+        std::cerr << "Usage: " << argv[0] << " <filename>\n";
+        return 1;
+    }
 
-    Lexer lex(source);
+    std::string filename = argv[1];
+    std::ifstream file(filename);
+    if(!file){
+        std::cerr << "ERROR :: FILE NOT FOUND :: " << filename << std::endl;
+        return 1;
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf(); // read entire file
+    std::string input = buffer.str();
+
+    Lexer lex(input);
 
     // we keep finding next tokens until we get an EOF_TOKEN
     // printing the symbol table
