@@ -20,6 +20,7 @@ private:
 public:
     Lexer(const std::string& input);
     Token nextToken();
+    Token peek(int lookAhead);
 };
 
 #endif

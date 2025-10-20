@@ -8,6 +8,16 @@ Lexer::Lexer(const std::string& input){
     this->col = 0;
 }
 
+Token Lexer::peek(int lookAhead){
+    // Keep generating tokens until we have enough, or we hit EOF
+    while((int)buffer.size() <= lookAhead){
+        Token t = nextToken();
+        buffer.push_back(t);
+        if(t.type == TokenType::EOF_TOKEN) break;
+    }
+    return buffer[lookAhead];
+}
+
 char Lexer::peekChar(int ahead=0){
     if(pos+ahead >= src.size()) return '\0';
     return src[pos+ahead];
