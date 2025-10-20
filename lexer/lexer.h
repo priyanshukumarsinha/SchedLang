@@ -15,6 +15,7 @@ private:
     char peekChar(int ahead);
     char advance();
     Token lexIdentifierOrKeyword();
+    Token lexNumber();
 
 public:
     Lexer(const std::string& input);

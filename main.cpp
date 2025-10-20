@@ -18,8 +18,8 @@ int main(){
         Token t = lex.nextToken(); 
         // this gives token which is to be processed now
         // now lets print the token
-        std::cout << idx << "\t" << static_cast<int>(t.type) << "\t" 
-                  << t.line << "[" << t.col << "]\t" << 
+        std::cout << idx << "\t" << static_cast<int>(t.type) << "\t\t" 
+                  << t.line << "[" << t.col << "]\t\t" << 
                   t.lexeme << "\n";
         if (t.type == TokenType::EOF_TOKEN) break;
         idx++;

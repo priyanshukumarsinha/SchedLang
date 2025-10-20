@@ -91,6 +91,26 @@ Token Lexer::lexIdentifierOrKeyword(){
 
 }
 
+Token Lexer::lexNumber(){
+    size_t startline=line, startCol=col;
+    std::string value;
+    while(isdigit(peekChar())){
+        // we don't need to check for eof here
+        // its already checked inside peekChar()
+        value+=advance();
+    }
+
+    Token tok;
+    tok.line = startline;
+    tok.col = startCol;
+    tok.intVal = std::stoi(value);
+    tok.lexeme = value;
+    tok.type = TokenType::INT;
+
+    return tok;
+
+}
+
 Token Lexer::nextToken(){
     // A recursive descent parser works by trying to match grammar rules one token at a time.
     // Sometimes, to decide which rule to apply, the parser must see more than one token ahead.
@@ -127,6 +147,23 @@ Token Lexer::nextToken(){
     // based on start
     if(isalpha(c)) return lexIdentifierOrKeyword();
     // if(isdigit(c)) return lexNumber();
+    if(isdigit(c)) return lexNumber();
+
+    // at last we check for symbols and errors (unwanted symbols)
+    int startLine = line, startCol = col;
+    Token tok;
+    tok.line = startLine;
+    tok.col = startCol;
+    tok.lexeme = advance();
+
+    switch (c) {
+        case '=': tok.type = TokenType::EQ; break;
+        case ';': tok.type = TokenType::SEMI; break;
+        case '{': tok.type = TokenType::LBRACE; break;
+        case '}': tok.type = TokenType::RBRACE; break;
+        default: tok.type = TokenType::UNKNOWN; break;
+    }
+    return tok;
 
     pos++;
     Token t1;
